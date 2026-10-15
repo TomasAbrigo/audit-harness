@@ -1,0 +1,14 @@
+{
+  "name": "audit-harness-marketplace",
+  "description": "Marketplace propio del harness de auditoría agéntica — Hermes + auditores de dominio + fact store, portable a cualquier proyecto.",
+  "owner": {
+    "name": "Tomas Abrigo"
+  },
+  "plugins": [
+    {
+      "name": "audit-harness",
+      "source": "./plugins/audit-harness",
+      "description": "Hermes orquesta auditores de seguridad, pentest, integridad de datos, arquitectura, build e infra sobre cualquier proyecto, con fact store propio (SQLite+FTS5) y vault de conocimiento transferible."
+    }
+  ]
+}
