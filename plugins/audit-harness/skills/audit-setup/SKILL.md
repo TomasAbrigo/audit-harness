@@ -41,8 +41,33 @@ environments:
 deploy_targets: []
 pentest_active_envs: [local]   # nunca agregar "production" sin que el usuario lo pida explícitamente
 vault_path: docs/audit-vault/
-verticals_enabled: [security, pentest, data-integrity, build, infra]
+
+# núcleo + las 12 verticales activas por default. privacy-minors NO se activa
+# acá -- queda apagada hasta que se confirme explícitamente que el proyecto
+# trackea datos de menores (ver agents/privacy-minors-auditor.md).
+verticals_enabled:
+  - security
+  - pentest
+  - data-integrity
+  - build
+  - infra
+  - multi-tenant
+  - llm-security
+  - cv-drift
+  - testing-coverage
+  - finops
+  - backup-dr
+  - sbom
+  - docker
+  - cicd
+  - incident-response
+  - accessibility
+  - feature-flags
 ```
+
+Preguntale al usuario, antes de cerrar el setup, si alguna de estas no aplica
+al proyecto (ej. `cv-drift` si no entrena modelos propios, `docker` si no usa
+contenedores) — sacala de la lista en vez de dejar que corra sin sentido.
 
 ## 3. Bootstrap del vault
 
