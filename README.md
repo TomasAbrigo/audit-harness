@@ -43,7 +43,14 @@ bootstrapea `docs/audit-vault/` (incluido `facts.db`). Después:
 /audit-harness:full-audit
 ```
 
-## Estado — Fase 1 del roadmap
+Antes de cada `git push`, corré manualmente (decisión explícita: sin hook que
+se auto-dispare):
+
+```
+/audit-harness:pre-push-gate
+```
+
+## Estado — Fase 1 + 2 del roadmap
 
 Implementado y validado (`claude plugin validate` pasa, instalación probada
 de punta a punta):
@@ -54,16 +61,18 @@ de punta a punta):
   integrity, build, infra
 - `bin/audit_vault.py` — fact store SQLite+FTS5 funcional (init/add/search/
   list/resolve, incluida la búsqueda `--cross-vertical`)
-- Skills `/audit-harness:audit-setup` y `/audit-harness:full-audit`
+- Skills `/audit-harness:audit-setup`, `/audit-harness:full-audit`,
+  `/audit-harness:feature-flow` (encadena grill-with-docs → to-prd →
+  to-issues → triage → tdd con gates de confirmación) y
+  `/audit-harness:pre-push-gate` (3 capas: seguridad/estructural/
+  automatización — **invocación manual, a propósito**: un hook de git que se
+  dispara solo en cada push, headless y sin supervisión, quedó descartado por
+  el clasificador de permisos de Auto Mode — y con razón)
 - Plantillas del vault de conocimiento (`playbook`, `best-practice`,
   `product-model`)
 
 Pendiente (próxima fase, no implementado todavía):
 
-- `/pre-push-gate` — hook de git real con las 3 capas (estructural/
-  seguridad/automatización) y bloqueo solo en severidad crítica
-- `/feature-flow` — encadena grill-with-docs → to-prd → to-issues → triage →
-  tdd con gates de confirmación
 - Las 13 verticales adicionales (producto/legal/ops/IA) del mapa original
 - Jerarquía de 2 niveles (leads temáticos) — solo si una corrida real llega a
   8+ auditores simultáneos

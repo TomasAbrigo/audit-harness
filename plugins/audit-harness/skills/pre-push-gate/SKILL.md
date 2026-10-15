@@ -1,13 +1,26 @@
 ---
 name: pre-push-gate
-description: Revisión headless del diff antes de un push — 3 capas (seguridad, estructural, automatización/patrones del proyecto). Severidad crítica bloquea el push; el resto solo avisa. Pensado para correr vía `claude -p` desde el hook .githooks/pre-push, pero también se puede invocar manualmente para un dry-run.
+description: Revisión manual del diff antes de un push — 3 capas (seguridad, estructural, automatización/patrones del proyecto). Corré esto vos mismo en tu sesión de Claude Code antes de pushear; no hay ningún hook de git que se dispare solo.
 disable-model-invocation: true
 ---
 
-Te llega un diff (contra la base del push) en el prompt. Revisalo en 3 capas,
-en este orden, priorizando lo que más importa primero.
+Corré esto como `/audit-harness:pre-push-gate` antes de un `git push`, dentro
+de tu sesión normal de Claude Code — con supervisión real, no en background.
+No existe un hook de git que te lo imponga automáticamente: la decisión de
+correrlo es tuya, cada vez.
 
-## Capa 1 — Seguridad (la que puede bloquear el push)
+## Primero, conseguí el diff vos mismo
+
+```bash
+BASE="$(git merge-base HEAD @{upstream} 2>/dev/null || git merge-base HEAD origin/main 2>/dev/null)"
+git diff "$BASE"...HEAD
+```
+
+Si no hay upstream configurado, usá la rama contra la que vas a abrir el PR.
+
+## Revisalo en 3 capas, en este orden
+
+### Capa 1 — Seguridad (la que debería hacerte frenar el push)
 
 - Secretos commiteados: API keys, tokens, connection strings, credenciales.
 - Inyección (SQL, comandos, path traversal) en código nuevo.
@@ -16,7 +29,7 @@ en este orden, priorizando lo que más importa primero.
 
 Cualquier hallazgo acá es **severidad crítica**.
 
-## Capa 2 — Estructural
+### Capa 2 — Estructural
 
 - Imports que no van a resolver (típico de código con una API inventada).
 - Una función/endpoint que el diff remueve pero que todavía se llama en otro
@@ -26,7 +39,7 @@ Cualquier hallazgo acá es **severidad crítica**.
 
 Severidad alta/media — avisa, no bloquea.
 
-## Capa 3 — Automatización / patrones ya resueltos en el proyecto
+### Capa 3 — Automatización / patrones ya resueltos en el proyecto
 
 - Si existe `.claude/rules/*.md` en el repo, comprobá que el diff no reinventa
   un patrón que esa regla ya resuelve (ej. paginación manual donde hay un
@@ -50,11 +63,12 @@ python3 <plugin-root>/bin/audit_vault.py search --db docs/audit-vault/facts.db \
 Si ya está, no lo repitas en el aviso — ya se sabe. Si es nuevo, registralo
 con `audit_vault.py add` antes de terminar.
 
-## Formato de salida (estricto)
+## Cerrá con un veredicto claro
 
-Listá los hallazgos en 3 líneas o menos, cada uno con archivo:línea. Si no hay
-nada que avisar, no escribas nada más que la línea final. Terminá tu
-respuesta con **exactamente** una de estas dos líneas, y nada después:
+Listá los hallazgos agrupados por capa, cada uno con archivo:línea. Terminá
+con uno de estos dos veredictos, explícito:
 
-- `BLOQUEAR_PUSH` — si encontraste algo de Capa 1
-- `PUSH_OK` — si no
+- **No pushear todavía** — si encontraste algo de Capa 1, con qué hay que
+  arreglar antes.
+- **OK para pushear** — si no hay nada de Capa 1 (lo de Capa 2/3 queda a tu
+  criterio, son avisos, no bloqueos).
