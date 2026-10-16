@@ -22,10 +22,22 @@ es para cientos de hallazgos chicos que no merecen nota propia.
 
 Uso:
   audit_vault.py init     --db PATH
-  audit_vault.py add      --db PATH --project P --vertical V --statement S --severity SEV [--evidence E]
+  audit_vault.py add      --db PATH --project P --vertical V (--statement S | --statement-file F)
+                           --severity SEV [--evidence E | --evidence-file F]
   audit_vault.py search   --db PATH [--project P] [--vertical V] [--status open] [--cross-vertical] QUERY
   audit_vault.py list     --db PATH [--project P] [--vertical V] [--status open]
   audit_vault.py resolve  --db PATH ID --by COMMIT_OR_PR [--wontfix] [--project P]
+
+`--statement-file`/`--evidence-file` existen para cuando el texto a registrar
+cita contenido literal del repo auditado (ej. un comentario adversarial
+encontrado por llm-security-auditor): escribilo primero con el tool `Write` a
+un archivo y pasá la ruta, en vez de interpolarlo inline en la línea de shell
+que invoca este script -- un metacarácter de shell (backtick, `$(...)`, `;`)
+en ese texto podría ejecutarse si se pega directo en el comando.
+
+facts.db se crea con permisos 0600 (solo el usuario dueño puede leerlo) porque
+puede contener detalles concretos de vulnerabilidades explotables de un
+proyecto de terceros.
 
 Límite conocido de `init`/el idempotente `executescript(SCHEMA)` en cada comando:
 `CREATE TABLE IF NOT EXISTS` no migra una tabla ya existente. Si una versión
@@ -40,9 +52,11 @@ from __future__ import annotations
 
 import argparse
 import datetime
+import os
 import re
 import sqlite3
 import sys
+import time
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS facts (
@@ -84,6 +98,11 @@ END;
 -- comando que edite statement/evidence de un fact ya creado, reintroducí un
 -- trigger AFTER UPDATE (mismo patrón que facts_ad + facts_ai combinados)
 -- ANTES de ese comando, no después.
+--
+-- No hay 'PRAGMA foreign_keys' ni columnas REFERENCES: facts es la única
+-- tabla real (facts_fts es una virtual table FTS5, sincronizada por los
+-- triggers de arriba, no por FK). Si en el futuro se agrega una tabla
+-- separada con una relación real, ahí se justifica.
 """
 
 # Extrae referencias "archivo:línea" o "archivo:línea-línea" de un campo
@@ -92,6 +111,12 @@ END;
 # para correlacionar hallazgos por ubicación real en vez de por igualdad
 # exacta de string.
 _LOC_RE = re.compile(r"([^\s,;()]+\.\w+):(\d+)(?:-(\d+))?")
+
+# Reintentos ante 'database is locked' cuando varios auditores escriben en
+# paralelo contra el mismo facts.db (Hermes despacha hasta 9 a la vez dentro
+# de un lead). Backoff simple, no exponencial -- no hay escala para que haga
+# falta algo más elaborado.
+_LOCK_RETRY_DELAYS = (0.5, 1.0, 2.0)
 
 
 def _parse_locations(evidence: str | None) -> list[tuple[str, int, int]]:
@@ -117,10 +142,66 @@ def now_iso() -> str:
     return datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
 
 
+def _restrict_permissions(path: str) -> None:
+    try:
+        os.chmod(path, 0o600)
+    except OSError:
+        pass  # mejor-esfuerzo -- no vale la pena fallar el comando por esto
+
+
+def _log_write_failure(db_path: str, context: str, exc: BaseException) -> None:
+    try:
+        log_path = os.path.join(os.path.dirname(os.path.abspath(db_path)) or ".", "audit_vault_errors.log")
+        with open(log_path, "a", encoding="utf-8") as f:
+            f.write(f"[{now_iso()}] {context}: {exc!r}\n")
+        _restrict_permissions(log_path)
+    except OSError:
+        pass
+
+
+def _run_with_lock_retry(db_path: str, context: str, fn):
+    """Corre fn() reintentando con backoff si sqlite tira 'database is locked'
+    (escritura concurrente de varios auditores). Si se agotan los reintentos,
+    loguea a archivo junto al db (en vez de un traceback crudo) y sale con
+    exit 1 -- el hallazgo nunca se persiste en ese caso, pero al menos queda
+    un rastro accesible de por qué."""
+    last_exc: sqlite3.OperationalError | None = None
+    for attempt, delay in enumerate((0.0, *_LOCK_RETRY_DELAYS)):
+        if delay:
+            time.sleep(delay)
+        try:
+            return fn()
+        except sqlite3.OperationalError as e:
+            if "locked" not in str(e).lower():
+                raise
+            last_exc = e
+            continue
+    assert last_exc is not None
+    _log_write_failure(db_path, context, last_exc)
+    print(
+        f"error: {db_path} está bloqueado por otro proceso y se agotaron los reintentos "
+        f"-- detalle en audit_vault_errors.log junto al facts.db",
+        file=sys.stderr,
+    )
+    sys.exit(1)
+
+
+def _read_text_or_file(value: str | None, file_value: str | None) -> str | None:
+    if file_value:
+        with open(file_value, encoding="utf-8") as f:
+            return f.read().rstrip("\n")
+    return value
+
+
 def connect(db_path: str) -> sqlite3.Connection:
-    conn = sqlite3.connect(db_path)
+    # timeout=10: sqlite3 reintenta internamente antes de tirar 'locked'.
+    # WAL: permite lectores concurrentes mientras alguien escribe, en vez de
+    # bloquear todo el archivo -- relevante porque varios auditores corren
+    # en paralelo contra el mismo facts.db.
+    conn = sqlite3.connect(db_path, timeout=10.0)
     conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys = ON;")
+    conn.execute("PRAGMA journal_mode = WAL;")
+    _restrict_permissions(db_path)
     return conn
 
 
@@ -135,16 +216,25 @@ def cmd_init(args: argparse.Namespace) -> None:
 def cmd_add(args: argparse.Namespace) -> None:
     conn = connect(args.db)
     conn.executescript(SCHEMA)  # idempotente: asegura schema aunque no se haya corrido init
-    cur = conn.execute(
-        """INSERT OR IGNORE INTO facts (project, vertical, statement, severity, evidence, detected_at)
-           VALUES (?, ?, ?, ?, ?, ?)""",
-        (args.project, args.vertical, args.statement, args.severity, args.evidence, now_iso()),
-    )
-    conn.commit()
+
+    statement = _read_text_or_file(args.statement, args.statement_file)
+    evidence = _read_text_or_file(args.evidence, args.evidence_file)
+
+    def _do_insert():
+        cur = conn.execute(
+            """INSERT OR IGNORE INTO facts (project, vertical, statement, severity, evidence, detected_at)
+               VALUES (?, ?, ?, ?, ?, ?)""",
+            (args.project, args.vertical, statement, args.severity, evidence, now_iso()),
+        )
+        conn.commit()
+        return cur
+
+    cur = _run_with_lock_retry(args.db, "cmd_add", _do_insert)
+
     if cur.rowcount == 0:
         existing = conn.execute(
             "SELECT id FROM facts WHERE project = ? AND vertical = ? AND statement = ? AND evidence IS ?",
-            (args.project, args.vertical, args.statement, args.evidence),
+            (args.project, args.vertical, statement, evidence),
         ).fetchone()
         conn.close()
         existing_id = existing["id"] if existing else "?"
@@ -287,11 +377,16 @@ def cmd_resolve(args: argparse.Namespace) -> None:
             sys.exit(1)
 
     status = "wontfix" if args.wontfix else "resolved"
-    cur = conn.execute(
-        "UPDATE facts SET status = ?, resolved_at = ?, resolved_by = ? WHERE id = ?",
-        (status, now_iso(), args.by, args.id),
-    )
-    conn.commit()
+
+    def _do_update():
+        cur = conn.execute(
+            "UPDATE facts SET status = ?, resolved_at = ?, resolved_by = ? WHERE id = ?",
+            (status, now_iso(), args.by, args.id),
+        )
+        conn.commit()
+        return cur
+
+    cur = _run_with_lock_retry(args.db, "cmd_resolve", _do_update)
     changed = cur.rowcount
     conn.close()
     if changed:
@@ -313,9 +408,17 @@ def main() -> None:
     p_add.add_argument("--db", required=True)
     p_add.add_argument("--project", required=True)
     p_add.add_argument("--vertical", required=True)
-    p_add.add_argument("--statement", required=True)
+    stmt_group = p_add.add_mutually_exclusive_group(required=True)
+    stmt_group.add_argument("--statement", default=None)
+    stmt_group.add_argument(
+        "--statement-file", default=None,
+        help="leer el statement desde un archivo en vez de un argumento inline -- usalo si el "
+             "texto cita contenido literal del repo auditado (puede tener metacaracteres de shell)",
+    )
     p_add.add_argument("--severity", required=True, choices=["critical", "high", "medium", "low"])
-    p_add.add_argument("--evidence", default=None)
+    ev_group = p_add.add_mutually_exclusive_group()
+    ev_group.add_argument("--evidence", default=None)
+    ev_group.add_argument("--evidence-file", default=None, help="idem --statement-file, para evidence")
     p_add.set_defaults(func=cmd_add)
 
     p_search = sub.add_parser("search", help="full-text search (dedupe antes de escribir o despachar)")

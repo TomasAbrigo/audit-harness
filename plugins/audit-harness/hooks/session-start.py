@@ -27,11 +27,13 @@ def _log_error(exc: BaseException) -> None:
     try:
         d = _log_dir()
         os.makedirs(d, exist_ok=True)
+        log_path = os.path.join(d, "hook-errors.log")
         ts = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
-        with open(os.path.join(d, "hook-errors.log"), "a", encoding="utf-8") as f:
+        with open(log_path, "a", encoding="utf-8") as f:
             f.write(f"[{ts}] session-start.py: {exc!r}\n")
             f.write(traceback.format_exc())
             f.write("\n")
+        os.chmod(log_path, 0o600)  # puede acumular rutas/tracebacks locales -- solo el dueño lo lee
     except OSError:
         pass  # el logging de errores nunca debe ser, en sí mismo, otra fuente de crash
 

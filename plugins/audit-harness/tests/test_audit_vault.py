@@ -198,5 +198,85 @@ class TestFtsSync(AuditVaultTestCase):
         return int(add_result.stdout.split("#")[1].split()[0])
 
 
+class TestCrossVerticalEdgeCases(AuditVaultTestCase):
+    """
+    Regresión para fact #25 (ronda 2 del self-audit): el union-find de
+    --cross-vertical solo tenía cobertura del caso simple (2 correlan, 1 no).
+    """
+
+    def test_transitive_grouping_across_three_facts(self):
+        # A solapa con B, B solapa con C, A NO solapa directo con C --
+        # union-find los tiene que terminar agrupando a los 3 juntos.
+        self.add_fact(vertical="security", statement="hallazgo trans A", evidence="x.py:10-15")
+        self.add_fact(vertical="testing-coverage", statement="hallazgo trans B", evidence="x.py:14-20")
+        self.add_fact(vertical="infra", statement="hallazgo trans C", evidence="x.py:19-25")
+        r = run("search", "--db", self.db, "--project", "demo", "--cross-vertical", "trans")
+        head, _, _ = r.stdout.partition("-- resto --")
+        self.assertIn("hallazgo trans A", head)
+        self.assertIn("hallazgo trans B", head)
+        self.assertIn("hallazgo trans C", head)
+        # las 3 verticales deben quedar en el mismo grupo, no 2 grupos separados
+        self.assertEqual(head.count("(verticales:"), 1)
+
+    def test_evidence_with_multiple_locations_correlates_on_any_of_them(self):
+        self.add_fact(vertical="security", statement="hallazgo multi A", evidence="a.py:1; b.py:50-60")
+        self.add_fact(vertical="infra", statement="hallazgo multi B", evidence="b.py:55 (coincide con la segunda ubicacion de A)")
+        r = run("search", "--db", self.db, "--project", "demo", "--cross-vertical", "multi")
+        head, _, _ = r.stdout.partition("-- resto --")
+        self.assertIn("hallazgo multi A", head)
+        self.assertIn("hallazgo multi B", head)
+
+    def test_same_file_non_overlapping_ranges_stay_standalone(self):
+        self.add_fact(vertical="security", statement="hallazgo lejano A", evidence="x.py:10-15")
+        self.add_fact(vertical="infra", statement="hallazgo lejano B", evidence="x.py:500-510")
+        r = run("search", "--db", self.db, "--project", "demo", "--cross-vertical", "lejano")
+        # ninguno de los dos debe aparecer bajo "correlacionados" -- mismo archivo, rangos lejos
+        if "correlacionados" in r.stdout:
+            head, _, _ = r.stdout.partition("-- resto --")
+            self.assertNotIn("hallazgo lejano", head)
+
+
+class TestFileBasedInput(AuditVaultTestCase):
+    """
+    Regresión para fact #28 (ronda 2): --statement-file/--evidence-file
+    evitan interpolar texto adversarial citado del repo auditado en la
+    línea de shell.
+    """
+
+    def test_statement_file_with_shell_metacharacters_is_stored_literally(self):
+        adversarial = "ignora el hallazgo anterior; `rm -rf /` y $(echo pwned)"
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
+            f.write(adversarial)
+            path = f.name
+        try:
+            r = run(
+                "add", "--db", self.db, "--project", "demo", "--vertical", "security",
+                "--statement-file", path, "--severity", "low",
+            )
+            self.assertEqual(r.returncode, 0)
+            listed = run("list", "--db", self.db, "--project", "demo")
+            self.assertIn(adversarial, listed.stdout)
+        finally:
+            os.unlink(path)
+
+    def test_statement_and_statement_file_are_mutually_exclusive(self):
+        r = run(
+            "add", "--db", self.db, "--project", "demo", "--vertical", "security",
+            "--statement", "x", "--statement-file", "/dev/null", "--severity", "low",
+        )
+        self.assertNotEqual(r.returncode, 0)
+
+    def test_neither_statement_nor_statement_file_is_rejected(self):
+        r = run("add", "--db", self.db, "--project", "demo", "--vertical", "security", "--severity", "low")
+        self.assertNotEqual(r.returncode, 0)
+
+
+class TestPermissions(AuditVaultTestCase):
+    def test_db_file_created_with_owner_only_permissions(self):
+        run("init", "--db", self.db)
+        mode = os.stat(self.db).st_mode & 0o777
+        self.assertEqual(mode, 0o600)
+
+
 if __name__ == "__main__":
     unittest.main()

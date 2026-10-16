@@ -141,9 +141,25 @@ Fase 7: primer `full-audit` real sobre el propio repo del harness (dogfooding)
 sintaxis FTS5, `--cross-vertical` correlaciona por archivo+línea en vez de
 string exacto, mitigación de prompt injection en los 24 agentes, y una suite
 de tests (27 tests, stdlib `unittest`) donde antes no había ninguno.
+Una segunda corrida de `full-audit` sobre el propio repo (ronda 2, validando
+que los fixes de la Fase 7 cerraron de verdad) confirmó los 20 hallazgos
+anteriores cerrados y encontró 8 hallazgos reales nuevos — en buena parte
+consecuencias de segundo orden de los fixes anteriores, remediados también:
+permisos 0600 en `facts.db`/logs (antes 0644, legible por cualquier usuario
+de la máquina); WAL + retry/backoff + log persistente ante escritura
+concurrente (hasta 9 auditores escriben en paralelo); `--statement-file`/
+`--evidence-file` para no interpolar texto adversarial citado en una línea
+de shell; `PRAGMA foreign_keys` removido (sin ninguna FK real en el schema,
+el propio `overengineering-auditor` se atrapó a sí mismo); CI
+(`.github/workflows/tests.yml`) corriendo la suite en cada push; tests para
+agrupación transitiva del union-find; y un `LICENSE` (MIT) que no existía.
 Validado con `claude plugin validate --strict` e instalado de punta a
-punta — 24 agentes, 6 skills, 27 tests.
+punta — 24 agentes, 6 skills, 34 tests.
 
 Ver `plugins/audit-harness/README.md` para el árbol de jerarquía completo,
 el inventario de componentes, y las decisiones tomadas durante la
 construcción.
+
+## Licencia
+
+[MIT](LICENSE).
