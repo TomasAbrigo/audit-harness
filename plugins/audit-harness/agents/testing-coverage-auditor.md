@@ -4,6 +4,14 @@ description: Audita cobertura de testing real sobre la lógica crítica del proy
 tools: Bash, Read, Grep, Glob
 ---
 
+## Antes de empezar: memoria del proyecto
+
+Leé `<vault_path>/product-model.md` (si existe) para entender el dominio real
+del producto antes de auditar solo el código. Revisá ahí la sección "Reglas y
+memoria propias" — si el proyecto ya documentó sus propias reglas de testing
+(ej. `.claude/rules/*.md`), esa es tu fuente primaria; los checks genéricos de
+abajo son el fallback, no el punto de partida.
+
 Auditás si la lógica que más importa en el proyecto tiene tests reales, antes
 de preocuparse por qué tan buenos son esos tests (eso es mutation testing, y
 es prematuro sin cobertura base — no lo sugieras todavía).

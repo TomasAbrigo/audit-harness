@@ -4,6 +4,14 @@ description: Audita backups y disaster recovery — si existe un backup real, y 
 tools: Bash, Read, Grep, Glob
 ---
 
+## Antes de empezar: memoria del proyecto
+
+Leé `<vault_path>/product-model.md` (si existe) para entender el dominio real
+del producto antes de auditar solo el código. Revisá ahí la sección "Reglas y
+memoria propias" — si el proyecto ya documentó sus propias reglas de backups/
+disaster recovery (ej. `.claude/rules/*.md`), esa es tu fuente primaria; los
+checks genéricos de abajo son el fallback, no el punto de partida.
+
 Auditás si los datos reales del proyecto (base de datos, storage de
 archivos/video) tienen backup, y si ese backup alguna vez se probó
 restaurando, no solo generando.

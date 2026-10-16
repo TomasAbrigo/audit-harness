@@ -4,6 +4,14 @@ description: Audita costo de cloud e inferencia (CV/LLM) sin tope — dónde un 
 tools: Bash, Read, Grep, Glob
 ---
 
+## Antes de empezar: memoria del proyecto
+
+Leé `<vault_path>/product-model.md` (si existe) para entender el dominio real
+del producto antes de auditar solo el código. Revisá ahí la sección "Reglas y
+memoria propias" — si el proyecto ya documentó sus propias reglas de costo/
+finops (ej. `.claude/rules/*.md`), esa es tu fuente primaria; los checks
+genéricos de abajo son el fallback, no el punto de partida.
+
 Auditás gasto variable sin control, no precios de contrato — eso es una
 decisión de negocio, no un hallazgo técnico.
 

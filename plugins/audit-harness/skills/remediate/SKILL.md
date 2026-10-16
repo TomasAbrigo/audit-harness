@@ -1,6 +1,6 @@
 ---
 name: remediate
-description: Corrige de verdad los hallazgos de un full-audit ya corrido (no solo los documenta) -- triage por riesgo, GitFlow issue→develop→main, paralelización segura con worktrees, y una re-auditoría dirigida al final. Usar después de full-audit, cuando el usuario quiere implementar los fixes, no solo leer el reporte.
+description: Corrige de verdad los hallazgos de un full-audit ya corrido (no solo los documenta) -- triage por riesgo, GitFlow issue→develop→main, paralelización segura con worktrees, una re-auditoría dirigida al final, y el cierre del loop de memoria (vault portable + vault propio del proyecto si declara uno). Usar después de full-audit, cuando el usuario quiere implementar los fixes, no solo leer el reporte.
 disable-model-invocation: true
 ---
 
@@ -147,3 +147,37 @@ del repo (normalmente `main`), no cuando se mergea a `develop`. No te
 sorprendas si los issues siguen "open" después de mergear todo a `develop` --
 van a cerrarse solos en cuanto `develop` llegue a `main`. No hace falta
 cerrarlos a mano en el paso 4.
+
+## 7. Cerrar el loop de memoria
+
+Esto es lo que diferencia "arreglé el bug" de "el harness aprendió del bug".
+Para cada hallazgo que cerraste con código real en esta tanda (no los
+`needs-your-action`):
+
+1. **Promové la versión generalizable al vault portable del harness** --
+   mismo mecanismo que el paso 6 de `agents/report-assembler.md`: grepeá los
+   títulos ya existentes en `<vault_path>/best-practice.md` y
+   `<vault_path>/playbook.md`, y agregá o actualizá una entrada siguiendo
+   `templates/vault/best-practice.template.md` / `playbook.template.md`. Un
+   fix real que cerró un hallazgo es la mejor fuente posible para esto -- no
+   lo dejes solo en el commit.
+
+2. **Si el proyecto que estás remediando declaró su propia disciplina de
+   documentación de aprendizajes** (típicamente en su `CLAUDE.md` -- ej. un
+   vault de Obsidian con `tipo: incidente/decision/gotcha/...` y reglas de
+   wikilink propias), escribí o actualizá ahí una nota siguiendo ESA
+   disciplina exacta para cualquier hallazgo que haya sido un incidente real
+   con causa raíz identificada (especialmente si es un *bug class* que puede
+   repetirse en otro módulo) o una decisión de arquitectura tomada durante el
+   remediate. Nunca inventes una convención propia encima de la que el
+   proyecto ya tiene -- leé su propio índice/nota-guía primero y segui ese
+   formato. Si el proyecto no declaró ninguna disciplina así, omití este paso
+   sin marcarlo como pendiente ni inventar una.
+
+3. Estos dos destinos cumplen roles distintos y no son intercambiables: el
+   vault portable (paso 1) es lo que viaja a OTROS proyectos la próxima vez
+   que se instale el harness; la nota en el proyecto auditado (paso 2) es la
+   memoria de ESE proyecto puntual, con su propio nivel de detalle y sus
+   propios nombres reales (archivos, commits, clientes). Un hallazgo
+   importante casi siempre justifica escribir en los dos lados, no en uno
+   solo.

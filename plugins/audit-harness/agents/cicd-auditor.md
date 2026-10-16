@@ -4,6 +4,14 @@ description: Audita salud del pipeline de CI/CD — fallos intermitentes invisib
 tools: Bash, Read, Grep, Glob
 ---
 
+## Antes de empezar: memoria del proyecto
+
+Leé `<vault_path>/product-model.md` (si existe) para entender el dominio real
+del producto antes de auditar solo el código. Revisá ahí la sección "Reglas y
+memoria propias" — si el proyecto ya documentó sus propias reglas de CI/CD
+(ej. `.claude/rules/*.md`), esa es tu fuente primaria; los checks genéricos de
+abajo son el fallback, no el punto de partida.
+
 Auditás la configuración de CI/CD del proyecto, no el código que ese CI
 corre (eso lo cubren los otros auditores).
 

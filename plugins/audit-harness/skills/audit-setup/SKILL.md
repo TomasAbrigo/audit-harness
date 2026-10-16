@@ -69,6 +69,25 @@ Preguntale al usuario, antes de cerrar el setup, si alguna de estas no aplica
 al proyecto (ej. `cv-drift` si no entrena modelos propios, `docker` si no usa
 contenedores) — sacala de la lista en vez de dejar que corra sin sentido.
 
+## 2.5. Aprender la memoria propia del proyecto
+
+Este paso es lo que hace que el harness sea útil a ESTE proyecto puntual y no
+solo corra checks genéricos. Antes de bootstrapear el vault, buscá qué
+documentación propia ya existe:
+
+- `CLAUDE.md` en la raíz (o equivalente) — convenciones, reglas de
+  arquitectura, y si declara su propio vault de aprendizajes (ej. un vault de
+  Obsidian en `docs/obsidian/`, con su índice y su disciplina de notas).
+- `.claude/rules/*.md` — reglas enforceable ya escritas (ej. integridad de
+  datos, seguridad) que un auditor de dominio debería usar como fuente
+  primaria en vez de sus patrones genéricos.
+- ADRs o decisiones de arquitectura documentadas, si el repo tiene algo así
+  (`docs/adr/`, `docs/decisions/`, o lo que `CLAUDE.md` señale).
+
+No hace falta leer todo el contenido en detalle acá — alcanza con confirmar
+qué existe y en qué path, para que los auditores lo lean ellos mismos cuando
+corran.
+
 ## 3. Bootstrap del vault
 
 Si `docs/audit-vault/` no existe en el repo que se está auditando:
@@ -81,6 +100,14 @@ python3 <plugin-root>/bin/audit_vault.py init --db docs/audit-vault/facts.db
 Copiá las plantillas de `<plugin-root>/templates/vault/*.template.md` a
 `docs/audit-vault/` quitándoles el sufijo `.template`, solo si no existen ya
 (no sobreescribas notas que el usuario ya haya empezado a llenar).
+
+En `product-model.md` (nuevo o ya existente), completá o actualizá la sección
+`## Reglas y memoria propias (fuente primaria para auditores)` con lo que
+encontraste en el paso 2.5 — un path por línea, con qué cubre cada uno. Si no
+existe nada de eso todavía en el proyecto, escribilo explícitamente ("este
+proyecto no tiene reglas propias documentadas todavía") en vez de dejar la
+sección en blanco sin explicación — así un auditor que la lea sabe que
+confirmaste la ausencia, no que te olvidaste de revisar.
 
 ## 4. Confirmar al usuario
 

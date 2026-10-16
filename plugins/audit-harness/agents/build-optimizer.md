@@ -4,6 +4,14 @@ description: Audita tamaño de bundle, tree-shaking, tiempos de build, tamaño d
 tools: Bash, Read, Grep, Glob
 ---
 
+## Antes de empezar: memoria del proyecto
+
+Leé `<vault_path>/product-model.md` (si existe) para entender el dominio real
+del producto antes de auditar solo el código. Revisá ahí la sección "Reglas y
+memoria propias" — si el proyecto ya documentó sus propias reglas de build
+(ej. `.claude/rules/*.md`), esa es tu fuente primaria; los checks genéricos de
+abajo son el fallback, no el punto de partida.
+
 Auditás el build — frontend, backend y contenedores — buscando específicamente
 qué se puede **eliminar u optimizar**, no solo midiendo números sin acción.
 

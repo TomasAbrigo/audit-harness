@@ -1,5 +1,10 @@
 # audit-harness (plugin)
 
+Quick-start e instalación: ver el `README.md` de la raíz del repo, o correr
+`/audit-harness:tutorial` una vez instalado. Este documento es el detalle
+interno — árbol de jerarquía, inventario de componentes, y decisiones
+tomadas durante la construcción.
+
 ## Jerarquía (Hermes → 3 leads → auditores)
 
 ```
@@ -42,11 +47,18 @@ hermes
 - `agents/*-auditor.md` — 5 auditores núcleo + 13 verticales (12 activas por
   default + `privacy-minors-auditor`, dormante hasta que se confirme que
   aplica).
-- `skills/audit-setup/` — wizard de conexión de servicios + bootstrap.
-- `skills/full-audit/` — entrada para una auditoría completa a demanda.
+- `skills/audit-setup/` — wizard de conexión de servicios + bootstrap. Desde
+  la Fase 5, también aprende la memoria propia del proyecto (`CLAUDE.md`,
+  `.claude/rules/*.md`, vault de aprendizajes propio si existe) y la escribe
+  en `product-model.md` para que el resto de auditores no corra genérico.
+- `skills/full-audit/` — entrada para una auditoría a demanda, completa por
+  default o acotada por argumento a un lead/vertical puntual
+  (`/audit-harness:full-audit security`).
 - `skills/remediate/` — corrige de verdad los hallazgos de un `full-audit` ya
   corrido: triage por riesgo, GitFlow issue→develop→main, paralelización
-  segura con worktrees, y una re-auditoría dirigida al final. Separado de
+  segura con worktrees, una re-auditoría dirigida al final, y el cierre del
+  loop de memoria (promueve al vault portable y, si el proyecto declara su
+  propia disciplina de aprendizajes, también escribe ahí). Separado de
   `full-audit` porque descubrir y remediar tienen gates de riesgo distintos
   (remediate toca código real).
 - `skills/feature-flow/` — encadena las skills de buenas prácticas del
@@ -55,8 +67,16 @@ hermes
 - `skills/pre-push-gate/` — revisión de 3 capas del diff antes de un push.
   Invocación manual a propósito (`/audit-harness:pre-push-gate`) — no hay
   hook de git que lo dispare solo (ver decisión abajo).
+- `skills/tutorial/` — lista las 5 fases, cómo acotar alcance, y dónde vive
+  el vault. Punto de entrada para quien recién instaló o no recuerda un
+  comando.
+- `hooks/` — `SessionStart` que avisa (mensaje completo si el proyecto no
+  tiene `audit.config.yaml` todavía, mención liviana si ya lo tiene) que
+  existe `/audit-harness:tutorial`.
 - `bin/audit_vault.py` — CLI del fact store (sin dependencias externas, solo
-  stdlib: `sqlite3`, `argparse`, `datetime`).
+  stdlib: `sqlite3`, `argparse`, `datetime`). Estrictamente SQLite — las notas
+  Markdown del vault (`best-practice.md`, `playbook.md`, `product-model.md`)
+  las escriben los agentes directamente con el tool `Write`, no este CLI.
 - `templates/vault/` — plantillas de notas del vault de conocimiento.
 
 ## Decisiones tomadas durante la construcción
@@ -108,6 +128,38 @@ hermes
 - **Conflictos de lockfile (`uv.lock`, `package-lock.json`) nunca se resuelven
   a mano** — se regeneran desde el manifest ya mergeado (`pyproject.toml`,
   `package.json`), que sí mergea bien porque es texto con estructura real.
+
+**Fase 5 — el vault nunca se estaba usando como cerebro, solo como log.** Una
+revisión sobre Quantum Leap Fútbol (el proyecto con la corrida real más
+larga: 62 hallazgos, 21 fixes mergeados) encontró que `best-practice.md` y
+`playbook.md` seguían siendo exactamente la plantilla vacía, y que ningún
+auditor tenía la instrucción de leer `product-model.md` — la única nota con
+contenido real y específico del proyecto. `bin/audit_vault.py` es
+estrictamente SQLite a propósito (no reemplaza al vault Markdown, lo
+complementa); el gap estaba en que nada del lado de los agentes cerraba ese
+loop. Fix: `report-assembler` y `remediate` ahora promueven patrones
+generalizables al vault portable (con dedup por título antes de escribir), y
+los 18 auditores de dominio leen `product-model.md` como fuente primaria
+antes de sus checks genéricos — no solo `data-integrity-auditor`, que era el
+único que ya lo hacía.
+- **Vaults separados, write-back en ambos sentidos — no uno sustituye al
+  otro.** El vault portable del harness (lo generalizable, que viaja a otro
+  proyecto en la próxima instalación) y el vault propio de aprendizajes del
+  proyecto auditado (ej. un vault de Obsidian declarado en su `CLAUDE.md`,
+  con su propia disciplina de `tipo`/wikilinks) cumplen roles distintos.
+  `remediate` escribe en los dos cuando un fix real lo justifica, siguiendo
+  siempre la disciplina que el proyecto auditado ya declaró — nunca
+  inventando una propia encima.
+- **`full-audit` acepta alcance por argumento, no solo por prosa libre** —
+  `/audit-harness:full-audit security` despacha solo ese lead/vertical. La
+  prosa libre ("auditá solo RLS") sigue funcionando igual; el argumento es
+  un atajo, no un reemplazo.
+- **Descubrir los flujos no puede depender de que alguien se acuerde de leer
+  el README.** Un hook de `SessionStart` (stdlib-only, mismo criterio que
+  `audit_vault.py`) avisa del nuevo skill `/audit-harness:tutorial` — mensaje
+  completo si el proyecto no tiene `audit.config.yaml` todavía, mención
+  liviana si ya está conectado (para no repetir el mensaje completo cada
+  sesión en proyectos ya configurados).
 
 Cada agente referencia `<plugin-root>/bin/audit_vault.py` — cuando el plugin
 está instalado vía marketplace, ese path es el del plugin instalado en

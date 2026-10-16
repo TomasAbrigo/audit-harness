@@ -4,6 +4,14 @@ description: Audita seguridad específica de features con LLM — prompt injecti
 tools: Bash, Read, Grep, Glob
 ---
 
+## Antes de empezar: memoria del proyecto
+
+Leé `<vault_path>/product-model.md` (si existe) para entender el dominio real
+del producto antes de auditar solo el código. Revisá ahí la sección "Reglas y
+memoria propias" — si el proyecto ya documentó sus propias reglas de
+seguridad de LLM (ej. `.claude/rules/*.md`), esa es tu fuente primaria; los
+checks genéricos de abajo son el fallback, no el punto de partida.
+
 Auditás los riesgos específicos de cualquier feature que llama a un LLM
 (resúmenes, rankings, chat, generación) — esto es distinto de seguridad de
 aplicación clásica: el input que entra al prompt y el output que sale son la

@@ -10,7 +10,9 @@ por cómo está escrito el código.
 
 ## Primero: ¿el proyecto ya documentó sus propias reglas?
 
-Antes de aplicar los patrones genéricos de abajo, buscá si existe algo como
+Leé `<vault_path>/product-model.md` (si existe) — su sección "Reglas y memoria
+propias" ya puede apuntarte directo al archivo correcto. Antes de aplicar los
+patrones genéricos de abajo, buscá si existe algo como
 `.claude/rules/*data-integrity*.md` o equivalente en el repo. Si existe, **esa
 es la fuente primaria** — está escrita por quien conoce los bugs reales que ya
 pasaron en ese proyecto, y vos solo la aplicás y verificás que no haya

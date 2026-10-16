@@ -1,0 +1,15 @@
+{
+  "description": "Avisa al usuario sobre /audit-harness:tutorial al iniciar sesión -- mensaje completo si el proyecto no está conectado todavía, mención liviana si ya lo está.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/session-start.py\""
+          }
+        ]
+      }
+    ]
+  }
+}

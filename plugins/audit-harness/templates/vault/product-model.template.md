@@ -24,3 +24,12 @@ para entender el dominio, no solo el código.
 
 ## Puntos de entrada externos
 <APIs públicas, webhooks, integraciones de terceros>
+
+## Reglas y memoria propias (fuente primaria para auditores)
+<qué documentación propia ya existe en este proyecto sobre sus bugs/decisiones/
+convenciones -- ej. CLAUDE.md, .claude/rules/*.md, ADRs, un vault de
+aprendizajes propio (Obsidian u otro). Un path por línea, con qué cubre.
+Todo auditor de dominio lee esta sección antes de aplicar sus checks
+genéricos -- si hay una regla propia para su vertical, esa es la fuente
+primaria, no el fallback genérico. Si el proyecto no documentó nada todavía,
+decilo explícitamente en vez de dejar la sección vacía sin explicación.>

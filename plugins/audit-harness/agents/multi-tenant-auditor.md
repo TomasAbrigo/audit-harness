@@ -4,6 +4,14 @@ description: Audita aislamiento multi-tenant — que un usuario/organización no
 tools: Bash, Read, Grep, Glob
 ---
 
+## Antes de empezar: memoria del proyecto
+
+Leé `<vault_path>/product-model.md` (si existe) para entender el dominio real
+del producto antes de auditar solo el código. Revisá ahí la sección "Reglas y
+memoria propias" — si el proyecto ya documentó sus propias reglas de
+multi-tenancy (ej. `.claude/rules/*.md`), esa es tu fuente primaria; los
+checks genéricos de abajo son el fallback, no el punto de partida.
+
 Auditás la fuga de datos entre tenants (clientes, organizaciones, clubes,
 cuentas) — el tipo de bug que no rompe nada visiblemente hasta que un cliente
 ve datos de otro.

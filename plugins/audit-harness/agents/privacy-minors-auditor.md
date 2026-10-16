@@ -4,6 +4,14 @@ description: "DORMANTE por default — no se incluye en verticals_enabled salvo 
 tools: Bash, Read, Grep, Glob
 ---
 
+## Antes de empezar: memoria del proyecto
+
+Si este auditor fue activado, leé `<vault_path>/product-model.md` (si existe)
+para entender el dominio real del producto. Revisá ahí la sección "Reglas y
+memoria propias" — si el proyecto ya documentó su propio marco de privacidad/
+menores (ej. `.claude/rules/*.md`), esa es tu fuente primaria; los checks
+genéricos de abajo son el fallback, no el punto de partida.
+
 Este auditor existe pero **no corre por default**. Se activa agregando
 `privacy-minors` a `verticals_enabled` en `audit.config.yaml` — hacelo solo
 si el proyecto que estás auditando confirma que trackea datos de menores de
