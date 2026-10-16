@@ -177,6 +177,24 @@ habilitarlo en `verticals_enabled`) y es invocable solo con
 propio texto cómo no duplicar `/improve-codebase-architecture`, `/simplify` ni
 `build-optimizer` — tres mecanismos parecidos que miden cosas distintas.
 
+**La primera versión de este auditor se reescribió para no ser ella misma
+sobre-ingeniería** (6 categorías por intuición, sin ningún anclaje). La
+versión final está parada en literatura real, no en vibes: el filtro
+explícito es Fred Brooks (*No Silver Bullet*, 1986) — complejidad esencial
+(del problema) vs. accidental (del código) — y cada categoría tiene un
+nombre citable y una forma mecánica de verificarla: "speculative generality"
+de Fowler/YAGNI, la Regla de Tres (Sandi Metz: "preferí duplicar a abstraer
+mal"), y módulos *shallow*/*pass-through* de Ousterhout (*A Philosophy of
+Software Design*). El código muerto dejó de grepearse a mano — se delega a
+la herramienta correcta por stack (`knip` en JS/TS, que para 2026 ya
+reemplazó a `ts-prune`/`depcheck`; `vulture` en Python, con su propio
+scoring de confianza; `staticcheck`/`deadcode` en Go) en vez de reinventar
+la detección con grep, que es precisamente el tipo de esfuerzo redundante
+que este auditor existe para señalar en el código de otros. Se sacó también
+la categoría de "testing con mocks excesivos" del borrador original — no
+tenía un ancla establecida propia y se superponía con
+`testing-coverage-auditor`.
+
 Cada agente referencia `<plugin-root>/bin/audit_vault.py` — cuando el plugin
 está instalado vía marketplace, ese path es el del plugin instalado en
 `~/.claude/plugins/`; cuando se corre con `--plugin-dir` para desarrollo, es

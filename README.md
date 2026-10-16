@@ -128,9 +128,12 @@ como fuente primaria antes de sus checks genéricos; `full-audit` acepta
 alcance acotado por argumento; y un hook de `SessionStart` + el nuevo skill
 `tutorial` hacen que todos los flujos sean descubribles desde el primer uso.
 Fase 6: sexto auditor núcleo, `overengineering-auditor` — el único que mide
-en la dirección de "sacar" (abstracciones de un solo uso, generalización
-especulativa, código muerto, capas redundantes) en vez de "agregar", corre
-siempre como parte de `lead-code-quality` y también es invocable solo
+en la dirección de "sacar" en vez de "agregar", parado en literatura real
+(Brooks: complejidad esencial vs. accidental; Fowler: speculative
+generality/YAGNI; Metz: Regla de Tres; Ousterhout: módulos shallow/
+pass-through) y delegando código muerto a la herramienta correcta por stack
+(Knip/Vulture/staticcheck) en vez de grep a mano. Corre siempre como parte
+de `lead-code-quality` y también es invocable solo
 (`/audit-harness:full-audit overengineering`).
 Validado con `claude plugin validate --strict` e instalado de punta a
 punta — 24 agentes, 6 skills.
