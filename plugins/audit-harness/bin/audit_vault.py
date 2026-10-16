@@ -218,7 +218,10 @@ def main() -> None:
     p_resolve = sub.add_parser("resolve", help="cierra un hallazgo")
     p_resolve.add_argument("--db", required=True)
     p_resolve.add_argument("id", type=int)
-    p_resolve.add_argument("--by", required=True, help="commit o PR que lo resolvió")
+    p_resolve.add_argument(
+        "--by", required=True,
+        help="commit o PR que lo resolvió -- convención: '<sha-corto> (#PR)', ej. '6268cb9 (#201)'",
+    )
     p_resolve.add_argument("--wontfix", action="store_true", help="cerrar como wontfix en vez de resolved")
     p_resolve.set_defaults(func=cmd_resolve)
 

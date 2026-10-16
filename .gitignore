@@ -1,3 +1,4 @@
 docs/audit-vault/facts.db
 __pycache__/
 *.pyc
+.DS_Store

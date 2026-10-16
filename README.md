@@ -26,6 +26,16 @@ Code, parado en la raíz del repo que querés auditar):
 
 Te devuelve un Artifact con todos los hallazgos, rankeados por severidad.
 
+**4. Corregir de verdad** (opcional, cuando quieras implementar los fixes en
+vez de solo leer el reporte):
+
+```
+/audit-harness:remediate
+```
+
+Triage por riesgo, GitFlow issue→develop→main, y una re-auditoría dirigida al
+final antes de tocar `main`.
+
 **Otros dos comandos del día a día:**
 
 ```
@@ -60,9 +70,11 @@ claude --plugin-dir /ruta/a/audit-harness/plugins/audit-harness
 
 Fase 1 a 4 del roadmap original, completas: Hermes + jerarquía de 2 niveles
 (3 leads) + 5 auditores núcleo + 13 verticales (12 activas + `privacy-minors`
-dormante) + report-assembler + fact store + 4 skills. Validado con
+dormante) + report-assembler + fact store + 5 skills (el quinto, `remediate`,
+agregado después de validar el flujo completo de descubrimiento→fix→merge en
+una corrida real de punta a punta sobre un proyecto real). Validado con
 `claude plugin validate --strict` e instalado de punta a punta — 23 agentes,
-4 skills, ~3.060 tokens fijos por sesión.
+5 skills.
 
 Ver `plugins/audit-harness/README.md` para el árbol de jerarquía completo,
 el inventario de componentes, y las decisiones tomadas durante la

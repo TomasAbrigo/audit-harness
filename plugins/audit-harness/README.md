@@ -44,6 +44,11 @@ hermes
   aplica).
 - `skills/audit-setup/` — wizard de conexión de servicios + bootstrap.
 - `skills/full-audit/` — entrada para una auditoría completa a demanda.
+- `skills/remediate/` — corrige de verdad los hallazgos de un `full-audit` ya
+  corrido: triage por riesgo, GitFlow issue→develop→main, paralelización
+  segura con worktrees, y una re-auditoría dirigida al final. Separado de
+  `full-audit` porque descubrir y remediar tienen gates de riesgo distintos
+  (remediate toca código real).
 - `skills/feature-flow/` — encadena las skills de buenas prácticas del
   proyecto (grill-with-docs → to-prd → to-issues → triage → tdd) con gates
   de confirmación entre paso y paso.
@@ -69,6 +74,40 @@ hermes
 - **La jerarquía de 2 niveles se construyó ahora** porque 13 verticales + 5
   núcleo = hasta 18 auditores posibles por corrida, cruzando el umbral de
   "8+" que se había fijado como trigger para no construirla antes de tiempo.
+- **`remediate` es un skill separado de `full-audit`**, agregado después de
+  la primera corrida real end-to-end (62 hallazgos → 21 fixes mergeados a
+  producción en Quantum Leap Fútbol). `full-audit` solo descubre y reporta;
+  implementar fixes de verdad resultó tener sus propios gates (triage por
+  riesgo, GitFlow, aislamiento de worktree) que no tiene sentido mezclar en
+  el mismo skill que corre auditores read-only.
+- **Aislamiento de `git worktree` es obligatorio al paralelizar fixes**, no
+  una sugerencia de estilo. En la corrida real, dos forks sin worktree sobre
+  el mismo directorio compartido causaron una colisión real: un `git clean`
+  de un fork borró trabajo sin commitear de otro. Nada se perdió de forma
+  irrecuperable (estaba en el contexto de conversación), pero fue puro azar,
+  no diseño. Ahora es una regla explícita en `skills/remediate/SKILL.md`.
+- **`git stash` es peligroso entre worktrees del mismo repo** porque
+  comparten una sola lista de stash. Un fork que corrió `git stash pop` a
+  secas en su propio worktree trajo de vuelta el stash de *otra* sesión —
+  generó una falsa alarma de "borré el spreadsheet del usuario" que costó una
+  verificación completa de filesystem+git para descartar. El stash original
+  nunca se tocó (seguía intacto), pero el skill ahora prohíbe el stash
+  bare y pide commitear a la rama del worktree en su lugar.
+- **GitHub solo autocierra issues (`Closes #N`) al mergear a la *default
+  branch*** del repo, no a cualquier rama. Con un flujo issue→develop→main,
+  los issues quedan "open" después de mergear todo a `develop` y se cierran
+  solos recién cuando `develop` llega a `main` — no es un bug ni hace falta
+  cerrarlos a mano antes. Documentado en `skills/remediate/SKILL.md` para que
+  no se interprete como que el merge a `develop` no funcionó.
+- **La re-auditoría después de remediar no necesita ser un full-audit desde
+  cero.** Repetir la jerarquía completa de Hermes es caro (la corrida real
+  chocó varias veces contra el límite de sesión de la cuenta haciéndolo una
+  sola vez); confirmar cada fix contra su test de regresión + grep de
+  regresión sobre los archivos tocados es mucho más barato y cubre lo mismo
+  para el caso común ("¿estos fixes puntuales cerraron de verdad?").
+- **Conflictos de lockfile (`uv.lock`, `package-lock.json`) nunca se resuelven
+  a mano** — se regeneran desde el manifest ya mergeado (`pyproject.toml`,
+  `package.json`), que sí mergea bien porque es texto con estructura real.
 
 Cada agente referencia `<plugin-root>/bin/audit_vault.py` — cuando el plugin
 está instalado vía marketplace, ese path es el del plugin instalado en

@@ -29,6 +29,11 @@ corré ese primero).
    mencioná, en texto, un resumen de una o dos líneas por severidad — no
    repitas el reporte completo en el chat, el Artifact es la fuente.
 
+5. Si el usuario quiere implementar los fixes (no solo leer el reporte),
+   el siguiente paso es `/audit-harness:remediate` — ese skill, no este,
+   cubre triage por riesgo, GitFlow, paralelización segura y la
+   re-auditoría dirigida al final.
+
 ## Nota sobre alcance
 
 "Con todo su poder" significa: todos los MCPs que estén conectados en la
