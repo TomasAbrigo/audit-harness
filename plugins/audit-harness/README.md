@@ -195,6 +195,35 @@ la categoría de "testing con mocks excesivos" del borrador original — no
 tenía un ancla establecida propia y se superponía con
 `testing-coverage-auditor`.
 
+**Fase 7 — el harness se auditó a sí mismo (primera corrida real sobre su
+propio repo) y encontró 20 hallazgos reales, incluida una falla confirmada
+en vivo mientras se armaba el reporte** (`search --cross-vertical` devolvió
+0 grupos sobre 20 hallazgos con al menos 4 correlaciones reales). Fixes
+aplicados: `cmd_search` ya no crashea con sintaxis FTS5 (try/except +
+mensaje claro); dedupe real vía `UNIQUE INDEX` + `INSERT OR IGNORE` en vez
+de depender 100% de la convención "search antes de add"; `--cross-vertical`
+correlaciona por archivo+línea superpuesta (parseado del campo `evidence`)
+en vez de por igualdad exacta de string; se sacó el trigger `facts_au`
+(ningún caller real tocaba las columnas que resincronizaba); `resolve` 
+acepta un `--project` opcional como defensa extra; y se agregó una suite de
+tests (`tests/`, stdlib `unittest`, 27 tests) que antes no existía. El
+`wontfix` que no tenía ningún caller real ahora lo tiene: ver la categoría
+de triage "falso positivo / riesgo aceptado" en `skills/remediate/SKILL.md`.
+
+**Decisión tomada, no un olvido: el bloque de invocación del CLI
+(`audit_vault.py add/search`) sigue duplicado en ~20 archivos de agente.**
+El propio self-audit lo señaló (igual causa raíz que el preámbulo de
+"memoria del proyecto") pero es un caso distinto: es un comando de shell
+literal de 5 líneas que cada auditor necesita ejecutable directo en su
+propio prompt, sin ningún mecanismo de include entre archivos de agente de
+Claude Code. Forzar una extracción ahí cambiaría "copiar un comando corto y
+mecánico" (bajo riesgo de drift real, porque es sintaxis, no prosa) por
+"inventar una capa de indirección que cada auditor tendría que resolver en
+tiempo de ejecución" — más complejidad a cambio de nada. El preámbulo de
+prosa (Fase 5/6, con drift real medido) y este bloque de comando no son el
+mismo tipo de duplicación aunque el auditor los haya agrupado bajo el mismo
+hallazgo.
+
 Cada agente referencia `<plugin-root>/bin/audit_vault.py` — cuando el plugin
 está instalado vía marketplace, ese path es el del plugin instalado en
 `~/.claude/plugins/`; cuando se corre con `--plugin-dir` para desarrollo, es

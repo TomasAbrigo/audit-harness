@@ -1,0 +1,45 @@
+# Config del audit-harness para auditarse a si mismo.
+# Generado directo (equivalente a /audit-harness:audit-setup) -- este repo es
+# un plugin de Claude Code: definiciones de agentes/skills en Markdown + un
+# CLI de Python sin dependencias (bin/audit_vault.py). No tiene backend,
+# frontend, base de datos, Dockerfile, ni .github/workflows -- no es una app
+# con servidor corriendo, es el harness mismo.
+stack: [python-stdlib-cli, markdown-agent-definitions, claude-code-plugin]
+
+paths:
+  backend: ""   # no aplica -- no hay servidor, solo bin/audit_vault.py (CLI local, stdlib)
+  frontend: ""  # no aplica -- no hay UI
+
+environments:
+  local: {}
+
+services_connected:
+  github: true
+
+deploy_targets: [github]   # se distribuye como marketplace de plugin via git, no un deploy de servicio
+
+# No hay servidor corriendo para atacar -- offensive-auditor se dispatcha
+# igual (es core) pero no tiene ningun entorno activo donde ejecutar nada.
+pentest_active_envs: []
+
+vault_path: docs/audit-vault/
+
+# Núcleo (security, pentest, data-integrity, build, infra, overengineering)
+# se dispatcha siempre sin importar esta lista. De las 13 verticales
+# opcionales, solo estas tres le hacen una pregunta real a este repo puntual:
+#   - llm-security: los agentes definen prompts que van a consumir contenido
+#     de repos ajenos (código auditado) dentro de su propio contexto --
+#     superficie real de prompt injection, aunque el harness no llame a un
+#     LLM por su cuenta.
+#   - testing-coverage: cero tests en todo el repo.
+#   - sbom: sin dependencias declaradas en ningún manifest -- vale confirmar
+#     que de verdad no hace falta uno, no asumirlo.
+# El resto (multi-tenant, cv-drift, finops, backup-dr, docker, cicd,
+# incident-response, accessibility, feature-flags) no aplica: no hay
+# multi-tenancy, no se entrena ningún modelo, no hay costo de cloud propio,
+# no hay datos para respaldar, no hay contenedores ni CI, no hay servicio en
+# producción, no hay UI.
+verticals_enabled:
+  - llm-security
+  - testing-coverage
+  - sbom

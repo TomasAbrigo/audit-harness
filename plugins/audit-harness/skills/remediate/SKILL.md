@@ -36,6 +36,20 @@ pago, una decisión de licenciamiento) se **documenta como pendiente** -- nunca
 se inventa ni se auto-resuelve. Etiquetalo `needs-your-action` y seguí de
 largo.
 
+Una quinta categoría, distinta de las cuatro anteriores: **falso positivo /
+riesgo aceptado** -- el hallazgo es real pero, después de revisarlo con el
+usuario, se decide explícitamente no corregirlo (el costo de mantenerlo es
+menor que el de arreglarlo, o el auditor malinterpretó el contexto). Esto se
+cierra con:
+
+```
+audit_vault.py resolve <id> --db <vault_path>/facts.db --wontfix --by "<razón corta>"
+```
+
+Nunca dejes un hallazgo así como `open` indefinidamente ni lo "resuelvas"
+como si hubiera un fix real -- `wontfix` es el estado que existe
+específicamente para esto, úsalo.
+
 ## 1. GitFlow: una rama por issue, todas confluyen en `develop`
 
 ```

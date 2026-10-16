@@ -1,7 +1,7 @@
 {
   "name": "audit-harness",
   "description": "Harness de auditoría agéntica: Hermes despacha auditores de seguridad, pentest activo (local/staging), integridad de datos, arquitectura, build e infra sobre cualquier proyecto, con fact store propio y vault de conocimiento transferible entre proyectos.",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "author": {
     "name": "Tomas Abrigo"
   }

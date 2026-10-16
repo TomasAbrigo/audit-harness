@@ -116,7 +116,7 @@ diseño original.
 
 ## Estado
 
-Fase 1 a 6 del roadmap original, completas. Fases 1-4: Hermes + jerarquía de
+Fase 1 a 7 del roadmap original, completas. Fases 1-4: Hermes + jerarquía de
 2 niveles (3 leads) + 5 auditores núcleo + 13 verticales (12 activas +
 `privacy-minors` dormante) + report-assembler + fact store + 5 skills (el
 quinto, `remediate`, agregado después de validar el flujo completo de
@@ -135,8 +135,14 @@ pass-through) y delegando código muerto a la herramienta correcta por stack
 (Knip/Vulture/staticcheck) en vez de grep a mano. Corre siempre como parte
 de `lead-code-quality` y también es invocable solo
 (`/audit-harness:full-audit overengineering`).
+Fase 7: primer `full-audit` real sobre el propio repo del harness (dogfooding)
+— 20 hallazgos reales, 0 críticos, remediados: dedupe real en `facts.db`
+(antes dependía 100% de la convención), `cmd_search` ya no crashea con
+sintaxis FTS5, `--cross-vertical` correlaciona por archivo+línea en vez de
+string exacto, mitigación de prompt injection en los 24 agentes, y una suite
+de tests (27 tests, stdlib `unittest`) donde antes no había ninguno.
 Validado con `claude plugin validate --strict` e instalado de punta a
-punta — 24 agentes, 6 skills.
+punta — 24 agentes, 6 skills, 27 tests.
 
 Ver `plugins/audit-harness/README.md` para el árbol de jerarquía completo,
 el inventario de componentes, y las decisiones tomadas durante la
