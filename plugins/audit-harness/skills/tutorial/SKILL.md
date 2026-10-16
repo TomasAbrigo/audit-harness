@@ -33,6 +33,7 @@ auditores). Para acotar:
 /audit-harness:full-audit security         -> un vertical/auditor puntual
 /audit-harness:full-audit security-legal   -> un lead completo (y su fan-out interno)
 /audit-harness:full-audit multi-tenant cv-drift   -> varios verticales a la vez
+/audit-harness:full-audit overengineering  -> solo abstracciones/código de más
 ```
 
 o en prosa libre, hablándole a Hermes directamente ("auditá solo RLS",
@@ -41,9 +42,15 @@ forma.
 
 **Los 3 leads:** `security-legal` (security, pentest, multi-tenant,
 llm-security, privacy-minors) · `code-quality` (data-integrity, build,
-testing-coverage, cv-drift, arquitectura) · `infra-ops-producto` (infra,
-docker, cicd, finops, backup-dr, incident-response, accessibility,
-feature-flags, sbom).
+overengineering, testing-coverage, cv-drift, arquitectura) ·
+`infra-ops-producto` (infra, docker, cicd, finops, backup-dr,
+incident-response, accessibility, feature-flags, sbom).
+
+**`overengineering`** es el único vertical que mide en la dirección de
+"sacar" en vez de "agregar" — abstracciones con un solo uso real,
+generalización especulativa, código muerto, capas redundantes, utilidades
+propias que reinventan algo que ya está instalado. Corre siempre (como
+`data-integrity` y `build`), no hace falta habilitarlo.
 
 Árbol completo y detalle de cada auditor: `agents/hermes.md` y el README del
 plugin.

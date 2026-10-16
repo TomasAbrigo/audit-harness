@@ -30,7 +30,8 @@ Alcance:  completo | por lead (3) | por vertical/auditor (18)
 ```
 
 o en prosa libre ("auditá solo RLS") hablándole a Hermes directamente.
-Detalle completo de los 3 leads y los 18 auditores en
+Detalle completo de los 3 leads y los 19 auditores (incluido
+`overengineering` — el único que mide qué sacar, no qué agregar) en
 `plugins/audit-harness/README.md` y en `/audit-harness:tutorial`.
 
 ## Uso rápido
@@ -115,7 +116,7 @@ diseño original.
 
 ## Estado
 
-Fase 1 a 5 del roadmap original, completas. Fases 1-4: Hermes + jerarquía de
+Fase 1 a 6 del roadmap original, completas. Fases 1-4: Hermes + jerarquía de
 2 niveles (3 leads) + 5 auditores núcleo + 13 verticales (12 activas +
 `privacy-minors` dormante) + report-assembler + fact store + 5 skills (el
 quinto, `remediate`, agregado después de validar el flujo completo de
@@ -126,8 +127,13 @@ vacío para siempre); `product-model.md` ahora lo lee cada auditor de dominio
 como fuente primaria antes de sus checks genéricos; `full-audit` acepta
 alcance acotado por argumento; y un hook de `SessionStart` + el nuevo skill
 `tutorial` hacen que todos los flujos sean descubribles desde el primer uso.
+Fase 6: sexto auditor núcleo, `overengineering-auditor` — el único que mide
+en la dirección de "sacar" (abstracciones de un solo uso, generalización
+especulativa, código muerto, capas redundantes) en vez de "agregar", corre
+siempre como parte de `lead-code-quality` y también es invocable solo
+(`/audit-harness:full-audit overengineering`).
 Validado con `claude plugin validate --strict` e instalado de punta a
-punta — 23 agentes, 6 skills.
+punta — 24 agentes, 6 skills.
 
 Ver `plugins/audit-harness/README.md` para el árbol de jerarquía completo,
 el inventario de componentes, y las decisiones tomadas durante la

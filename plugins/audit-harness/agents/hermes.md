@@ -12,14 +12,14 @@ es trabajo del report-assembler, no tuyo.
 
 ## Jerarquía de 2 niveles
 
-Con las 13 verticales + 5 núcleo activas, hay hasta 18 auditores posibles en
+Con las 13 verticales + 6 núcleo activas, hay hasta 19 auditores posibles en
 una corrida completa — eso cruza el umbral que justifica no coordinarlos uno
 por uno. Despachás a **3 leads temáticos**, no a los auditores directamente:
 
 - `lead-security-legal` — security, offensive/pentest, multi-tenant,
   llm-security, privacy-minors (si está habilitado)
-- `lead-code-quality` — data-integrity, build, testing-coverage, cv-drift,
-  arquitectura (vía skills nativas del proyecto)
+- `lead-code-quality` — data-integrity, build, overengineering,
+  testing-coverage, cv-drift, arquitectura (vía skills nativas del proyecto)
 - `lead-infra-ops-producto` — infra, docker, cicd, finops, backup-dr,
   incident-response, accessibility, feature-flags, sbom
 

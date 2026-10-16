@@ -18,6 +18,7 @@ hermes
 ├── lead-code-quality
 │   ├── data-integrity-auditor
 │   ├── build-optimizer
+│   ├── overengineering-auditor    (único que mide "sacar", no "agregar")
 │   ├── testing-coverage-auditor
 │   └── cv-drift-auditor
 └── lead-infra-ops-producto
@@ -40,13 +41,15 @@ hermes
 - `agents/hermes.md` — orquestador. Despacha a los 3 leads, consulta
   `facts.db` antes de arrancar, nunca agrega hallazgos crudos.
 - `agents/lead-*.md` — 3 leads temáticos. Cada uno maneja el fan-out interno
-  de su rama (existen porque 18 auditores posibles cruza el umbral que
+  de su rama (existen porque 19 auditores posibles cruza el umbral que
   justifica no coordinarlos uno por uno desde Hermes).
 - `agents/report-assembler.md` — lee solo el vault, corre correlación
   cruzada entre verticales, escribe el reporte final.
-- `agents/*-auditor.md` — 5 auditores núcleo + 13 verticales (12 activas por
+- `agents/*-auditor.md` — 6 auditores núcleo + 13 verticales (12 activas por
   default + `privacy-minors-auditor`, dormante hasta que se confirme que
-  aplica).
+  aplica). El sexto núcleo, `overengineering-auditor`, es el único que mide
+  en la dirección de "sacar" en vez de "agregar" — ver la decisión de Fase 6
+  abajo.
 - `skills/audit-setup/` — wizard de conexión de servicios + bootstrap. Desde
   la Fase 5, también aprende la memoria propia del proyecto (`CLAUDE.md`,
   `.claude/rules/*.md`, vault de aprendizajes propio si existe) y la escribe
@@ -160,6 +163,19 @@ antes de sus checks genéricos — no solo `data-integrity-auditor`, que era el
   completo si el proyecto no tiene `audit.config.yaml` todavía, mención
   liviana si ya está conectado (para no repetir el mensaje completo cada
   sesión en proyectos ya configurados).
+
+**Fase 6 — `overengineering-auditor`, el único que mide en la dirección
+contraria.** Los otros 18 auditores buscan qué falta (un check, un backup, un
+test, un rate limit). Sobre-ingeniería es el patrón opuesto — código,
+abstracciones o configuración que ya sobran — y ningún auditor existente lo
+cubría: `build-optimizer` mide bundle/deps, no diseño; la skill nativa
+`/improve-codebase-architecture` busca huecos de estructura, dirección
+opuesta a "sacar". Se agregó como sexto auditor núcleo (siempre dispatcheado
+por `lead-code-quality`, igual que `data-integrity`/`build`, sin necesidad de
+habilitarlo en `verticals_enabled`) y es invocable solo con
+`/audit-harness:full-audit overengineering`. El agente deja explícito en su
+propio texto cómo no duplicar `/improve-codebase-architecture`, `/simplify` ni
+`build-optimizer` — tres mecanismos parecidos que miden cosas distintas.
 
 Cada agente referencia `<plugin-root>/bin/audit_vault.py` — cuando el plugin
 está instalado vía marketplace, ese path es el del plugin instalado en

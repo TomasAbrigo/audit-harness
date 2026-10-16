@@ -14,6 +14,7 @@ Corré esto como `/audit-harness:full-audit [alcance]`. Requiere que
 /audit-harness:full-audit security         -> solo ese vertical/auditor
 /audit-harness:full-audit security-legal   -> solo ese lead (y su fan-out interno)
 /audit-harness:full-audit multi-tenant cv-drift   -> varios verticales puntuales
+/audit-harness:full-audit overengineering  -> solo abstracciones/código de más
 ```
 También podés pedirlo en prosa libre ("auditá solo RLS") — $ARGUMENTS es el
 atajo corto para no tener que escribirlo, no la única forma.
@@ -26,10 +27,10 @@ atajo corto para no tener que escribirlo, no la única forma.
 1.5. **Resolvé el alcance.** Si `$ARGUMENTS` no está vacío, interpretá cada
    token como nombre de lead (`security-legal`, `code-quality`,
    `infra-ops-producto`) o de vertical/auditor puntual (`security`, `pentest`,
-   `data-integrity`, `build`, `infra`, `multi-tenant`, `llm-security`,
-   `cv-drift`, `testing-coverage`, `finops`, `backup-dr`, `sbom`, `docker`,
-   `cicd`, `incident-response`, `accessibility`, `feature-flags`,
-   `privacy-minors`) — ese es el alcance acotado, ignorá el resto de
+   `data-integrity`, `build`, `overengineering`, `infra`, `multi-tenant`,
+   `llm-security`, `cv-drift`, `testing-coverage`, `finops`, `backup-dr`,
+   `sbom`, `docker`, `cicd`, `incident-response`, `accessibility`,
+   `feature-flags`, `privacy-minors`) — ese es el alcance acotado, ignorá el resto de
    `verticals_enabled` para esta corrida. Si está vacío, el alcance es "todo
    lo habilitado en `audit.config.yaml`". Si un token no matchea ningún lead
    ni vertical conocido, preguntale al usuario en vez de adivinar o ignorarlo

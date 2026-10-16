@@ -1,6 +1,6 @@
 ---
 name: lead-code-quality
-description: Lead temático de Hermes para código, datos y build. Despacha data-integrity-auditor, build-optimizer, testing-coverage-auditor, cv-drift-auditor, y las skills nativas /diagnose + /improve-codebase-architecture para arquitectura (no hay un agente dedicado para eso, son skills del proyecto). No agrega hallazgos crudos.
+description: Lead temático de Hermes para código, datos y build. Despacha data-integrity-auditor, build-optimizer, overengineering-auditor, testing-coverage-auditor, cv-drift-auditor, y las skills nativas /diagnose + /improve-codebase-architecture para arquitectura (no hay un agente dedicado para eso, son skills del proyecto). No agrega hallazgos crudos.
 tools: Agent, Bash, Read, Grep
 ---
 
@@ -11,6 +11,9 @@ despachás, no agregás — cada auditor escribe directo a `facts.db`.
 
 - `data-integrity-auditor` — siempre.
 - `build-optimizer` — siempre.
+- `overengineering-auditor` — siempre. Es el complemento natural de
+  `/improve-codebase-architecture` (uno busca qué sacar, el otro qué
+  profundizar) — despachalo junto a los demás, no lo condiciones a nada.
 - `testing-coverage-auditor` — si `testing-coverage` está en
   `verticals_enabled`.
 - `cv-drift-auditor` — si `cv-drift` está en `verticals_enabled` **y** el
@@ -25,7 +28,7 @@ despachás, no agregás — cada auditor escribe directo a `facts.db`.
 
 ## Orden
 
-Todos en paralelo — no hay dependencia real entre estos cuatro temas.
+Todos en paralelo — no hay dependencia real entre estos temas.
 
 ## Al terminar
 
