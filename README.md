@@ -5,21 +5,75 @@ nuevo: **"Escribí `/audit-harness:tutorial` para ver todos los flujos."**
 Si no esperás a que te lo diga, corré `/audit-harness:tutorial` apenas
 instales.
 
+## Mapa completo
+
+Hermes despacha a 3 leads temáticos, cada uno fan-out a sus auditores. Las
+6 skills (del lado izquierdo) son los comandos que vos tipeás; todo lo que
+cuelga de Hermes corre solo, invocado por esas skills.
+
+```mermaid
+flowchart LR
+    subgraph Skills["Comandos (/audit-harness:*)"]
+        AS[audit-setup]
+        FF[feature-flow]
+        FA[full-audit]
+        RM[remediate]
+        PG[pre-push-gate]
+        TU[tutorial]
+    end
+
+    FA --> H((Hermes))
+    RM -.-> H
+
+    H --> LSL[lead-security-legal]
+    H --> LCQ[lead-code-quality]
+    H --> LIO[lead-infra-ops-producto]
+    H -.al terminar.-> RA[[report-assembler]]
+
+    LSL --> SEC[security-auditor]
+    LSL --> OFF[offensive-auditor]
+    LSL --> MT[multi-tenant-auditor]
+    LSL --> LLM[llm-security-auditor]
+    LSL --> PRIV["privacy-minors-auditor (dormante)"]
+
+    LCQ --> DI[data-integrity-auditor]
+    LCQ --> BO[build-optimizer]
+    LCQ --> OE[overengineering-auditor]
+    LCQ --> TC[testing-coverage-auditor]
+    LCQ --> CV[cv-drift-auditor]
+
+    LIO --> INF[infra-auditor]
+    LIO --> DS[docker-security-auditor]
+    LIO --> CI[cicd-auditor]
+    LIO --> FO[finops-auditor]
+    LIO --> BDR[backup-dr-auditor]
+    LIO --> IR[incident-response-auditor]
+    LIO --> A11Y[accessibility-auditor]
+    LIO --> FFL[feature-flags-auditor]
+    LIO --> SBOM[sbom-auditor]
+```
+
+19 auditores en total (6 núcleo, siempre corren: `security`,
+`data-integrity`, `build-optimizer`, `overengineering`, `infra`,
+`testing-coverage` + 13 verticales de producto/legal/ops, 12 activas por
+default y `privacy-minors` dormante hasta que el proyecto confirme que
+aplica).
+
 ## Mapa: fases × alcance
 
 ```
 Fases:    audit-setup → feature-flow → full-audit → remediate → pre-push-gate
-Alcance:  completo | por lead (3) | por vertical/auditor (18)
+Alcance:  completo | por lead (3) | por vertical/auditor (19)
 ```
 
-| Fase | Cuándo | Comando |
-|---|---|---|
-| Setup | una vez por proyecto | `/audit-harness:audit-setup` |
-| Pre-feature | antes de arrancar algo nuevo | `/audit-harness:feature-flow` |
-| Auditar | cuando quieras, las veces que quieras | `/audit-harness:full-audit [alcance]` |
-| Corregir | para implementar los fixes de verdad | `/audit-harness:remediate` |
-| Pre-push | a mano, antes de cada `git push` | `/audit-harness:pre-push-gate` |
-| Ayuda | para ver todo esto de nuevo | `/audit-harness:tutorial` |
+| Fase | Cuándo | Comando | Qué hace |
+|---|---|---|---|
+| Setup | una vez por proyecto | `/audit-harness:audit-setup` | Wizard de conexión + bootstrap: detecta qué ya está conectado, genera `audit.config.yaml` y aprende la memoria propia del proyecto (`CLAUDE.md`, `.claude/rules/*.md`, vault propio si existe) en `product-model.md`. |
+| Pre-feature | antes de arrancar algo nuevo | `/audit-harness:feature-flow` | Encadena las skills de buenas prácticas del proyecto (grill-with-docs → to-prd → to-issues → triage → tdd) con gates de confirmación entre paso y paso. |
+| Auditar | cuando quieras, las veces que quieras | `/audit-harness:full-audit [alcance]` | Despacha a Hermes → leads → auditores (alcance completo o acotado); termina en un Artifact con los hallazgos rankeados, armado por `report-assembler`. |
+| Corregir | para implementar los fixes de verdad | `/audit-harness:remediate` | Triage por riesgo, GitFlow issue→develop→main, paralelización con worktrees aislados, re-auditoría dirigida al final, cierre del loop de memoria (vault portable + vault propio del proyecto). |
+| Pre-push | a mano, antes de cada `git push` | `/audit-harness:pre-push-gate` | Revisión de 3 capas del diff (seguridad, estructural, patrones del proyecto) antes de pushear. Invocación manual a propósito, no hay hook de git. |
+| Ayuda | para ver todo esto de nuevo | `/audit-harness:tutorial` | Lista las 5 fases, cómo acotar alcance, y dónde vive el vault. |
 
 `full-audit` corre todo por default. Para acotarlo:
 
@@ -30,8 +84,33 @@ Alcance:  completo | por lead (3) | por vertical/auditor (18)
 ```
 
 o en prosa libre ("auditá solo RLS") hablándole a Hermes directamente.
-Detalle completo de los 3 leads y los 19 auditores (incluido
-`overengineering` — el único que mide qué sacar, no qué agregar) en
+
+### Qué audita cada uno de los 19 auditores
+
+| Lead | Auditor | Qué mira |
+|---|---|---|
+| security-legal | `security-auditor` | SAST, secret scanning, CVEs en dependencias, patrones OWASP |
+| security-legal | `offensive-auditor` | Pentest activo (solo local/staging): bypass de auth, fuzzing, romper RLS |
+| security-legal | `multi-tenant-auditor` | Que un usuario/organización no vea datos de otro (RLS o filtro de tenant) |
+| security-legal | `llm-security-auditor` | Prompt injection, costo sin límite, fuga de datos entre tenants vía output de un LLM |
+| security-legal | `privacy-minors-auditor` *(dormante)* | Datos biométricos/identidad de menores y consentimiento válido |
+| code-quality | `data-integrity-auditor` | Paginación inestable, insert vs. upsert, id crudo vs. identidad resuelta, excepciones tragadas |
+| code-quality | `build-optimizer` | Bundle, tree-shaking, tiempos de build, dependencias sin usar |
+| code-quality | `overengineering-auditor` | El único que mide "sacar": código muerto, generalización especulativa, abstracción prematura, módulos shallow, reinventar la rueda |
+| code-quality | `testing-coverage-auditor` | Cobertura real sobre lógica crítica (parsers, cálculos, políticas de seguridad) |
+| code-quality | `cv-drift-auditor` | Drift de modelos de Computer Vision/ML propios en producción |
+| infra-ops-producto | `infra-auditor` | Config de deploy/gateway, CORS, secrets expuestos, rate limiting, observabilidad |
+| infra-ops-producto | `docker-security-auditor` | Imagen base, usuario de ejecución, multi-stage |
+| infra-ops-producto | `cicd-auditor` | Fallos intermitentes, permisos excesivos en workflows, secretos en CI |
+| infra-ops-producto | `finops-auditor` | Gasto variable de cloud/inferencia sin tope |
+| infra-ops-producto | `backup-dr-auditor` | Si existe backup real y si alguna vez se probó un restore |
+| infra-ops-producto | `incident-response-auditor` | Runbook mínimo para cuando algo se rompe en producción |
+| infra-ops-producto | `accessibility-auditor` | WCAG, prioridad según si hay superficie pública |
+| infra-ops-producto | `feature-flags-auditor` | Rollout controlado para features riesgosas |
+| infra-ops-producto | `sbom-auditor` | Compliance de licencias open source (copyleft en producto que se vende) |
+
+Detalle completo de la jerarquía, el inventario de componentes, y las
+decisiones tomadas durante la construcción en
 `plugins/audit-harness/README.md` y en `/audit-harness:tutorial`.
 
 ## Uso rápido
